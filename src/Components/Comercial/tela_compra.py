@@ -41,6 +41,45 @@ class TelaCompra(QWidget):
         self.combo_fornecedor = QComboBox()
         self.combo_fornecedor.setPlaceholderText("Selecione o Fornecedor")
         self.carregar_fornecedores()
+        # Aplique o estilo ao combobox de fornecedores
+        combobox_style = """
+        QComboBox {
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 5px;
+            min-width: 150px;
+        }
+        QComboBox:hover {
+            border: 1px solid #007bff;
+        }
+        QComboBox::drop-down {
+            subcontrol-origin: padding;
+            subcontrol-position: top right;
+            width: 20px;
+            border-left: 1px solid #ccc;
+        }
+        QComboBox QAbstractItemView {
+            background-color: white;
+            border: 1px solid #ccc;
+            selection-background-color: #e6f0ff;
+            selection-color: black;
+            outline: none;
+        }
+        QComboBox QAbstractItemView::item {
+            padding: 5px;
+            color: black;
+        }
+        QComboBox QAbstractItemView::item:hover {
+            background-color: #e6f0ff;
+            color: black;
+        }
+        QComboBox QAbstractItemView::item:selected {
+            background-color: #007bff;
+            color: white;
+        }
+        """
+        self.combo_fornecedor.setStyleSheet(combobox_style)
         layout_dados.addRow("Fornecedor:", self.combo_fornecedor)
 
         # Número da Nota Fiscal
@@ -67,6 +106,8 @@ class TelaCompra(QWidget):
 
         self.combo_produtos = QComboBox()
         self.combo_produtos.setPlaceholderText("Selecione um produto")
+        # Aplique o estilo ao combobox de produtos
+        self.combo_produtos.setStyleSheet(combobox_style)
         layout_busca.addWidget(self.combo_produtos)
 
         self.input_qtd = QSpinBox()

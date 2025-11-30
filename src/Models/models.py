@@ -8,13 +8,14 @@ Base = declarative_base()
 
 # ENUMS
 
+
 class CargoPerfilEnum(enum.Enum):
-    ADMINISTRADOR = "administrador"
-    FINANCEIRO = "financeiro"
-    VENDAS = "vendas"
-    COMPRAS = "compras"
-    ESTOQUE = "estoque"
-    TECNICO = "tecnico"
+    ADMINISTRADOR = "ADMINISTRADOR" 
+    FINANCEIRO = "FINANCEIRO"
+    VENDAS = "VENDAS"
+    COMPRAS = "COMPRAS"
+    ESTOQUE = "ESTOQUE"
+    TECNICO = "TECNICO"
 
 
 class TipoPessoaEnum(enum.Enum):

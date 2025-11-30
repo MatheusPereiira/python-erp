@@ -339,19 +339,6 @@ class ComercialSistema:
         self.pedidos_compra = PedidosCompra(sessao)
         self.pedidos_venda = PedidosVenda(sessao)
 
-    def registrar_compra(self, fornecedor_id, itens, numero_nf, data_compra):
-        """Registra uma nova compra no sistema"""
-        try:
-            # Calcula total básico a partir dos subtotais informados nos itens
-            total_compra = sum(item.get('subtotal', 0) for item in itens)
-
-            # Aqui você pode adicionar validações, persistência no banco e atualização de estoque
-            # Ex.: criar objeto Compra, adicionar itens, commit na sessão, etc.
-
-            return True, "Compra registrada com sucesso"
-        except Exception as e:
-            return False, f"Erro ao registrar compra: {e}"
-
     def sincronizar(self):
         print("Sincronizando comercial...")
         # futuramente sincroniza com DB / estoque

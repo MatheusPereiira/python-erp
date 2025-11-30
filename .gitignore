@@ -1,0 +1,18 @@
+# Ignorar ambiente virtual
+venv/
+env/
+.env
+
+# Ignorar arquivos compilados do Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ignorar arquivos de sistema do Linux/Mac/Windows
+.DS_Store
+Thumbs.db
+
+# Ignorar banco de dados local (se quiser que não suba os dados de teste)
+# Se quiser enviar o banco vazio, não coloque a linha abaixo
+*.db
+*.sqlite3
