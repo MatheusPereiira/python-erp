@@ -190,7 +190,15 @@ class MainAppUnificado(QMainWindow):
             layout_texto.addWidget(lbl_nome)
             layout_texto.addWidget(lbl_cargo)
             layout_card.addLayout(layout_texto)
-            layout_card.addWidget(QLabel("⚙")) 
+            # Ícone de Configuração (Engrenagem) - AJUSTADO
+            lbl_config = QLabel("⚙")
+            lbl_config.setFixedSize(30, 30) # Define um tamanho fixo para o "quadrado" do ícone
+            lbl_config.setAlignment(Qt.AlignmentFlag.AlignCenter) # Centraliza o desenho no meio do quadrado
+            # Aumentei a fonte para 22px e coloquei uma cor cinza elegante
+            lbl_config.setStyleSheet("font-size: 22px; color: #6c757d; font-weight: bold;")
+            
+            # Adiciona ao layout alinhado verticalmente ao centro
+            layout_card.addWidget(lbl_config, 0, Qt.AlignmentFlag.AlignVCenter) 
 
             layout_lateral.addWidget(self.card_usuario)
             layout_lateral.addSpacing(15)
