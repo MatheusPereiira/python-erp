@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (
     QAbstractItemView, QDoubleSpinBox, QGroupBox, QDateEdit, QSpinBox, QFormLayout
 )
 from PyQt6.QtCore import Qt, QDate
-from sqlalchemy import select
+from sqlalchemy import select, or_ # ADICIONADO "or_" AQUI
 from datetime import date, datetime
 
 # Modelos do Banco de Dados
@@ -63,12 +63,12 @@ class TelaVenda(QWidget):
         layout_dados.addStretch() # Empurra para esquerda
         layout_principal.addWidget(grupo_dados)
 
-        # 3. GRUPO: ADICIONAR PRODUTOS (Visual Ajustado)
+        # 3. GRUPO: ADICIONAR PRODUTOS
         grupo_itens = QGroupBox("Adicionar Produtos")
         grupo_itens.setStyleSheet("QGroupBox { font-weight: bold; border: 1px solid #ccc; padding: 10px; margin-top: 10px; }")
         layout_itens = QHBoxLayout(grupo_itens)
 
-        # Produto (Label + Combobox juntos)
+        # Produto
         layout_itens.addWidget(QLabel("Produto:"))
         self.combo_produto = QComboBox()
         self.combo_produto.setPlaceholderText("Selecione o Produto")
@@ -103,21 +103,20 @@ class TelaVenda(QWidget):
         self.btn_add.clicked.connect(self.adicionar_item)
         layout_itens.addWidget(self.btn_add)
         
-        layout_itens.addStretch() # Mantém tudo compacto à esquerda
+        layout_itens.addStretch()
         layout_principal.addWidget(grupo_itens)
 
         # 4. TABELA DE ITENS
         self.table_itens = QTableWidget()
         self.table_itens.setColumnCount(6)
         self.table_itens.setHorizontalHeaderLabels(["ID", "Produto", "Qtd", "Preço Unit.", "Subtotal", "Ações"])
-        self.table_itens.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch) # Coluna Produto estica
+        self.table_itens.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self.table_itens.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table_itens.setAlternatingRowColors(True)
         self.table_itens.setStyleSheet("""
             QTableWidget { background-color: white; border: 1px solid #ddd; }
             QHeaderView::section { background-color: #f8f9fa; padding: 6px; border: 1px solid #ddd; font-weight: bold; }
         """)
-        
         layout_principal.addWidget(self.table_itens)
 
         # 5. RODAPÉ
@@ -153,14 +152,23 @@ class TelaVenda(QWidget):
 
         layout_principal.addWidget(frame_rodape)
 
-    # --- LÓGICA (MANTIDA IGUAL À VERSÃO CORRIGIDA) ---
+    # --- LÓGICA DE DADOS ---
 
     def carregar_dados_iniciais(self):
         try:
-            # Carregar Clientes
-            clientes = self.sessao.execute(select(Entidade)).scalars().all()
+            # --- CORREÇÃO AQUI: FILTRAR APENAS CLIENTES ---
+            # Busca Entidades que tenham 'CLIENTE' ou 'AMBOS' no tipo
+            query = select(Entidade).where(
+                or_(
+                    Entidade.tipo_entidade.ilike('%CLIENTE%'),
+                    Entidade.tipo_entidade.ilike('%AMBOS%')
+                )
+            )
+            clientes = self.sessao.execute(query).scalars().all()
+            
             self.combo_cliente.clear()
             self.combo_cliente.addItem("Selecione o Cliente", None)
+            
             for c in clientes:
                 nome = c.nome_fantasia if c.nome_fantasia else c.razao_social
                 self.combo_cliente.addItem(nome, c.id)
@@ -212,7 +220,7 @@ class TelaVenda(QWidget):
 
         self.atualizar_tabela()
         
-        # Resetar campos para facilitar próxima adição
+        # Resetar campos
         self.combo_produto.setCurrentIndex(0)
         self.spin_qtd.setValue(1)
         self.spin_preco.setValue(0.0)
@@ -233,7 +241,7 @@ class TelaVenda(QWidget):
             self.table_itens.setItem(i, 3, QTableWidgetItem(f"R$ {item['preco_unitario']:.2f}"))
             self.table_itens.setItem(i, 4, QTableWidgetItem(f"R$ {item['subtotal']:.2f}"))
             
-            # Botão remover igual ao da compra
+            # Botão remover
             btn_remover = QPushButton("❌")
             btn_remover.setStyleSheet("background-color: #dc3545; color: white; font-weight: bold; border-radius: 4px;")
             btn_remover.clicked.connect(lambda checked, r=i: self.remover_item_selecionado(r))
@@ -273,7 +281,6 @@ class TelaVenda(QWidget):
 
             # 2. ITENS E ESTOQUE
             for item in self.itens_venda:
-                # Item do Pedido
                 novo_item = PedidoVendaItem(
                     pedido_id=pedido.id,
                     produto=item['nome'], 
@@ -283,20 +290,19 @@ class TelaVenda(QWidget):
                 )
                 self.sessao.add(novo_item)
 
-                # Atualizar Estoque
                 produto_db = self.sessao.get(Item, item['id'])
                 if produto_db:
                     estoque_atual = float(produto_db.estoque or 0)
                     produto_db.estoque = estoque_atual - item['quantidade']
                     
-                    # Movimentação (Preenchendo campos obrigatórios do seu model)
+                    # Usa fornecedor_id do produto, ou 1 se nulo
                     forn_id = produto_db.fornecedor_id if produto_db.fornecedor_id else 1 
                     
                     mov = MovimentoEstoque(
                         item_id=produto_db.id,
                         quantidade=item['quantidade'],
                         tipo_movimento='saida',
-                        data_ultima_mov=datetime.now(), # Corrigido: data_ultima_mov
+                        data_ultima_mov=datetime.now(),
                         observacao=f"Venda PDV #{pedido.id}",
                         estoque_minimo=0, 
                         estoque_maximo=0, 
@@ -313,7 +319,7 @@ class TelaVenda(QWidget):
             conta = Financeiro(
                 descricao=f"Venda #{pedido.id}",
                 tipo_lancamento='R', 
-                origem='V',          # Corrigido: Origem Venda
+                origem='V',          
                 valor_nota=total_final,
                 data_emissao=data_hj,
                 vencimento=data_hj,

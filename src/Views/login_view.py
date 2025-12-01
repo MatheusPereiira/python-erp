@@ -1,108 +1,167 @@
-from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QLineEdit, 
-                             QPushButton, QMessageBox)
-from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (
+    QDialog, QVBoxLayout, QLabel, QLineEdit, 
+    QPushButton, QMessageBox, QFrame, QGraphicsDropShadowEffect
+)
+from PyQt6.QtCore import Qt, QPropertyAnimation, QRect
+from PyQt6.QtGui import QColor, QFont
 from sqlalchemy import select
 from src.Models.models import Usuario
+import hashlib
 
 class LoginDialog(QDialog):
-    def __init__(self, session):
+    def __init__(self, sessao):
         super().__init__()
-        self.session = session
-        self.setWindowTitle("Login - SGCFE")
-        self.setFixedSize(300, 320) # Aumentei um pouco a altura para caber os textos
-        self.setWindowFlags(Qt.WindowType.WindowCloseButtonHint) 
+        self.sessao = sessao
+        self.usuario_logado = None
+        
+        self.setWindowTitle("Login - Sistema ERP")
+        self.setFixedSize(400, 450)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint) # Remove barra de título padrão para visual moderno
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground) # Fundo transparente para bordas arredondadas
+        
+        self.setup_ui()
 
-        layout = QVBoxLayout(self)
-        layout.setSpacing(10) # Espaço entre os elementos
-        layout.setContentsMargins(30, 30, 30, 30)
+    def setup_ui(self):
+        # Layout Principal
+        layout_main = QVBoxLayout(self)
+        layout_main.setContentsMargins(10, 10, 10, 10)
+
+        # Frame Central (Cartão Branco)
+        self.frame_card = QFrame()
+        self.frame_card.setStyleSheet("""
+            QFrame {
+                background-color: #ffffff;
+                border-radius: 15px;
+                border: 1px solid #e0e0e0;
+            }
+        """)
+        
+        # Sombra
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(20)
+        shadow.setColor(QColor(0, 0, 0, 50))
+        shadow.setOffset(0, 5)
+        self.frame_card.setGraphicsEffect(shadow)
+        
+        layout_card = QVBoxLayout(self.frame_card)
+        layout_card.setSpacing(15)
+        layout_card.setContentsMargins(40, 40, 40, 40)
 
         # Título
-        lbl_titulo = QLabel("Acesso ao Sistema")
-        lbl_titulo.setStyleSheet("font-size: 18px; font-weight: bold; color: #424242; margin-bottom: 10px;")
+        lbl_titulo = QLabel("BEM-VINDO")
         lbl_titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(lbl_titulo)
+        lbl_titulo.setStyleSheet("font-size: 24px; font-weight: bold; color: #333; letter-spacing: 2px;")
+        layout_card.addWidget(lbl_titulo)
+        
+        lbl_sub = QLabel("Faça login para continuar")
+        lbl_sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lbl_sub.setStyleSheet("font-size: 12px; color: #777; margin-bottom: 20px;")
+        layout_card.addWidget(lbl_sub)
 
-        # --- USUÁRIO ---
-        lbl_user = QLabel("Usuário:")
-        lbl_user.setStyleSheet("font-weight: bold; color: #555;")
-        layout.addWidget(lbl_user)
-
+        # --- CAMPO USUÁRIO ---
         self.input_user = QLineEdit()
-        self.input_user.setPlaceholderText("Digite seu login...")
-        self.input_user.setStyleSheet("padding: 8px; border-radius: 4px; border: 1px solid #ccc;")
-        layout.addWidget(self.input_user)
+        self.input_user.setPlaceholderText("Usuário")
+        self.input_user.setFixedHeight(45)
+        self.input_user.setStyleSheet("""
+            QLineEdit {
+                background-color: #f5f7fa;
+                border: 1px solid #d1d5db;
+                border-radius: 8px;
+                padding-left: 15px;
+                font-size: 14px;
+                color: #333;
+            }
+            QLineEdit:focus {
+                border: 2px solid #007bff;
+                background-color: #fff;
+            }
+        """)
+        
+        # !!! O SEGREDO ESTÁ AQUI !!!
+        # Converte para maiúsculo enquanto digita
+        self.input_user.textChanged.connect(lambda: self.input_user.setText(self.input_user.text().upper()))
+        
+        layout_card.addWidget(self.input_user)
 
-        # --- SENHA ---
-        lbl_pass = QLabel("Senha:")
-        lbl_pass.setStyleSheet("font-weight: bold; color: #555; margin-top: 5px;")
-        layout.addWidget(lbl_pass)
-
+        # --- CAMPO SENHA ---
         self.input_senha = QLineEdit()
-        self.input_senha.setPlaceholderText("Digite sua senha...")
-        self.input_senha.setEchoMode(QLineEdit.EchoMode.Password) 
-        self.input_senha.setStyleSheet("padding: 8px; border-radius: 4px; border: 1px solid #ccc;")
+        self.input_senha.setPlaceholderText("Senha")
+        self.input_senha.setEchoMode(QLineEdit.EchoMode.Password)
+        self.input_senha.setFixedHeight(45)
+        self.input_senha.setStyleSheet(self.input_user.styleSheet())
+        # Ao apertar Enter na senha, tenta logar
         self.input_senha.returnPressed.connect(self.verificar_login)
-        layout.addWidget(self.input_senha)
-
-        layout.addSpacing(15) # Espaço extra antes dos botões
+        layout_card.addWidget(self.input_senha)
 
         # Botão Entrar
-        self.btn_entrar = QPushButton("Entrar")
+        self.btn_entrar = QPushButton("ENTRAR")
         self.btn_entrar.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_entrar.clicked.connect(self.verificar_login)
+        self.btn_entrar.setFixedHeight(45)
         self.btn_entrar.setStyleSheet("""
             QPushButton {
-                background-color: #007bff; 
-                color: white; 
-                font-weight: bold; 
-                padding: 10px; 
-                border-radius: 5px;
-                border: none;
+                background-color: #007bff;
+                color: white;
+                font-weight: bold;
+                border-radius: 8px;
+                font-size: 14px;
+                letter-spacing: 1px;
             }
             QPushButton:hover {
                 background-color: #0056b3;
             }
+            QPushButton:pressed {
+                background-color: #004494;
+            }
         """)
-        layout.addWidget(self.btn_entrar)
+        self.btn_entrar.clicked.connect(self.verificar_login)
+        layout_card.addWidget(self.btn_entrar)
 
-        # Botão Sair
-        self.btn_sair = QPushButton("Sair")
-        self.btn_sair.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_sair.clicked.connect(self.reject)
-        self.btn_sair.setStyleSheet("""
-            QPushButton {
-                background-color: transparent; 
-                color: #6c757d; 
-                border: none;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                color: #495057;
-                text-decoration: underline;
-            }
-        """)
-        layout.addWidget(self.btn_sair)
+        # Botão Sair (Pequeno)
+        btn_sair = QPushButton("Fechar Sistema")
+        btn_sair.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_sair.setStyleSheet("background: transparent; color: #888; font-size: 11px;")
+        btn_sair.clicked.connect(self.reject)
+        layout_card.addWidget(btn_sair)
+
+        layout_main.addWidget(self.frame_card)
 
     def verificar_login(self):
-        usuario_txt = self.input_user.text().strip()
+        usuario_txt = self.input_user.text().strip() # Já vai estar em maiúsculo
         senha_txt = self.input_senha.text().strip()
 
         if not usuario_txt or not senha_txt:
-            QMessageBox.warning(self, "Aviso", "Preencha usuário e senha.")
+            self.animar_erro()
             return
 
         try:
-            # Busca usuário pelo login
-            query = select(Usuario).where(Usuario.login == usuario_txt)
-            usuario_db = self.session.execute(query).scalar_one_or_none()
+            # Busca usuário no banco
+            stmt = select(Usuario).where(Usuario.login == usuario_txt)
+            usuario_db = self.sessao.execute(stmt).scalar_one_or_none()
 
-            # Verificação simples (sem hash)
-            if usuario_db and usuario_db.senha_hash == senha_txt:
-                self.usuario_logado = usuario_db  # Salva o objeto usuário
-                self.accept()
+            if usuario_db:
+                # Verifica senha (assumindo texto puro ou hash simples)
+                # Se você usar hash no futuro, altere aqui. Por enquanto compara direto.
+                if usuario_db.senha_hash == senha_txt:
+                    self.usuario_logado = usuario_db
+                    self.accept() # Fecha o dialog e retorna sucesso
+                else:
+                    QMessageBox.warning(self, "Acesso Negado", "Senha incorreta.")
+                    self.input_senha.clear()
             else:
-                QMessageBox.critical(self, "Erro", "Usuário ou senha incorretos.")
-                self.input_senha.clear()
+                QMessageBox.warning(self, "Acesso Negado", "Usuário não encontrado.")
         
         except Exception as e:
-            QMessageBox.critical(self, "Erro no Banco", f"Falha ao consultar usuário: {e}")
+            print(f"Erro no login: {e}")
+            QMessageBox.critical(self, "Erro", "Erro ao conectar com o banco de dados.")
+
+    def animar_erro(self):
+        """Faz a janela tremer se errar (efeito visual)"""
+        animation = QPropertyAnimation(self, b"pos")
+        animation.setDuration(100)
+        animation.setLoopCount(3)
+        pos = self.pos()
+        animation.setKeyValueAt(0, pos)
+        animation.setKeyValueAt(0.2, pos + Qt.QPoint(5, 0)) # type: ignore
+        animation.setKeyValueAt(0.7, pos + Qt.QPoint(-5, 0)) # type: ignore
+        animation.setKeyValueAt(1, pos)
+        animation.start()
