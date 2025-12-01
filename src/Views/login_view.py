@@ -2,7 +2,8 @@ from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QLineEdit, 
     QPushButton, QMessageBox, QFrame, QGraphicsDropShadowEffect
 )
-from PyQt6.QtCore import Qt, QPropertyAnimation, QRect
+# CORREÇÃO: Adicionado QPoint na importação
+from PyQt6.QtCore import Qt, QPropertyAnimation, QRect, QPoint
 from PyQt6.QtGui import QColor, QFont
 from sqlalchemy import select
 from src.Models.models import Usuario
@@ -16,8 +17,8 @@ class LoginDialog(QDialog):
         
         self.setWindowTitle("Login - Sistema ERP")
         self.setFixedSize(400, 450)
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint) # Remove barra de título padrão para visual moderno
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground) # Fundo transparente para bordas arredondadas
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint) 
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground) 
         
         self.setup_ui()
 
@@ -77,7 +78,6 @@ class LoginDialog(QDialog):
             }
         """)
         
-        # !!! O SEGREDO ESTÁ AQUI !!!
         # Converte para maiúsculo enquanto digita
         self.input_user.textChanged.connect(lambda: self.input_user.setText(self.input_user.text().upper()))
         
@@ -89,7 +89,6 @@ class LoginDialog(QDialog):
         self.input_senha.setEchoMode(QLineEdit.EchoMode.Password)
         self.input_senha.setFixedHeight(45)
         self.input_senha.setStyleSheet(self.input_user.styleSheet())
-        # Ao apertar Enter na senha, tenta logar
         self.input_senha.returnPressed.connect(self.verificar_login)
         layout_card.addWidget(self.input_senha)
 
@@ -116,7 +115,7 @@ class LoginDialog(QDialog):
         self.btn_entrar.clicked.connect(self.verificar_login)
         layout_card.addWidget(self.btn_entrar)
 
-        # Botão Sair (Pequeno)
+        # Botão Sair
         btn_sair = QPushButton("Fechar Sistema")
         btn_sair.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_sair.setStyleSheet("background: transparent; color: #888; font-size: 11px;")
@@ -126,7 +125,7 @@ class LoginDialog(QDialog):
         layout_main.addWidget(self.frame_card)
 
     def verificar_login(self):
-        usuario_txt = self.input_user.text().strip() # Já vai estar em maiúsculo
+        usuario_txt = self.input_user.text().strip()
         senha_txt = self.input_senha.text().strip()
 
         if not usuario_txt or not senha_txt:
@@ -139,15 +138,15 @@ class LoginDialog(QDialog):
             usuario_db = self.sessao.execute(stmt).scalar_one_or_none()
 
             if usuario_db:
-                # Verifica senha (assumindo texto puro ou hash simples)
-                # Se você usar hash no futuro, altere aqui. Por enquanto compara direto.
                 if usuario_db.senha_hash == senha_txt:
                     self.usuario_logado = usuario_db
-                    self.accept() # Fecha o dialog e retorna sucesso
+                    self.accept()
                 else:
+                    self.animar_erro() # Treme a tela
                     QMessageBox.warning(self, "Acesso Negado", "Senha incorreta.")
                     self.input_senha.clear()
             else:
+                self.animar_erro() # Treme a tela
                 QMessageBox.warning(self, "Acesso Negado", "Usuário não encontrado.")
         
         except Exception as e:
@@ -160,8 +159,11 @@ class LoginDialog(QDialog):
         animation.setDuration(100)
         animation.setLoopCount(3)
         pos = self.pos()
+        
+        # CORREÇÃO: Usando QPoint direto, sem Qt.
         animation.setKeyValueAt(0, pos)
-        animation.setKeyValueAt(0.2, pos + Qt.QPoint(5, 0)) # type: ignore
-        animation.setKeyValueAt(0.7, pos + Qt.QPoint(-5, 0)) # type: ignore
+        animation.setKeyValueAt(0.2, pos + QPoint(5, 0)) 
+        animation.setKeyValueAt(0.7, pos + QPoint(-5, 0)) 
         animation.setKeyValueAt(1, pos)
+        
         animation.start()
