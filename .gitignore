@@ -8,7 +8,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Ignorar arquivos de sistema do Linux/Mac/Windows
+# Ignorar arquivos de sistema do Linux/Windows
 .DS_Store
 Thumbs.db
 
