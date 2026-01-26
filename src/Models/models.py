@@ -84,16 +84,35 @@ class CondicaoDePagamento(Base):
 
 class Item(Base):
     __tablename__ = "itens"
+
     id = Column(Integer, primary_key=True, autoincrement=True)
-    codigo_item = Column(String(50), unique=True)
-    tipo_item = Column(String(10), default="PRODUTO")
-    nome = Column(String(100))
-    estoque = Column(Numeric(10, 2), default=0)
+
+    codigo_item = Column(String(50), unique=True, nullable=False)
+    tipo_item = Column(String(10), default="PRODUTO", nullable=False)
+
+    nome = Column(String(100), nullable=False)
     descricao = Column(Text)
+
+    estoque = Column(Numeric(10, 2), default=0)
     estoque_minimo = Column(Numeric(10, 2), default=0)
+
     custo_unitario = Column(Numeric(10, 2), nullable=False, default=0)
     preco_venda = Column(Numeric(10, 2), nullable=False, default=0)
+
     ativo = Column(Boolean, default=True)
+
+  
+    data_cadastro = Column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False
+    )
+
+    fornecedor_id = Column(Integer, ForeignKey("entidade.id"))
+    fornecedor = relationship(
+        "Entidade",
+        back_populates="itens_fornecidos"
+    )
     
     # CORREÇÃO: Aponta para Entidade agora
     fornecedor_id = Column(Integer, ForeignKey("entidade.id")) 
@@ -181,18 +200,57 @@ class Financeiro(Base):
 
 
 # ==========================================================
-# CONEXÃO COM O BANCO
+# CONEXÃO COM O BANCO (SQLite LOCAL)
 # ==========================================================
 
-usuario = "sgcfe_user"
-senha = "SGCFE-ES2FANS123%2A"
-host = "3.16.180.102"
-banco = "SGCFE-ES2FANS"
-
-engine = create_engine(f"postgresql+psycopg2://{usuario}:{senha}@{host}:5432/{banco}")
+engine = create_engine(
+    "sqlite:///erp.db",
+    echo=False,
+    future=True
+)
 
 Base.metadata.create_all(engine)
 
-print("✅ Conexão bem-sucedida e tabelas criadas no PostgreSQL!")
+from sqlalchemy.orm import sessionmaker
 
-#engine = create_engine('sqlite:///sistema.db')
+SessionLocal = sessionmaker(bind=engine)
+
+def criar_admin_padrao():
+    session = SessionLocal()
+
+    # Criar TODOS os perfis, se não existirem
+    perfis_existentes = {
+        p.cargo for p in session.query(Perfil).all()
+    }
+
+    for cargo in CargoPerfilEnum:
+        if cargo not in perfis_existentes:
+            session.add(Perfil(cargo=cargo))
+
+    session.commit()
+
+    # Criar usuário admin se não existir
+    admin_existente = session.query(Usuario).filter_by(login="ADMIN").first()
+    if admin_existente:
+        session.close()
+        return
+
+    perfil_admin = session.query(Perfil).filter_by(
+        cargo=CargoPerfilEnum.ADMINISTRADOR
+    ).first()
+
+    usuario_admin = Usuario(
+        nome="Administrador",
+        login="ADMIN",
+        senha_hash="123",
+        perfil_id=perfil_admin.id
+    )
+
+    session.add(usuario_admin)
+    session.commit()
+    session.close()
+
+    print("✅ Perfis criados e usuário admin disponível")
+
+
+criar_admin_padrao()
