@@ -5,7 +5,14 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import QDate, Qt
 from sqlalchemy import select, func
 
-from src.Models.models import PedidoVenda, PedidoVendaItem, Entidade
+from src.Models.models import (
+    PedidoVenda,
+    PedidoVendaItem,
+    Entidade,
+    Item,
+    TipoEntidadeEnum
+)
+
 
 class DashboardVendasWidget(QWidget):
     def __init__(self, sessao):
@@ -141,38 +148,44 @@ class DashboardVendasWidget(QWidget):
         self.layout_kpi.addWidget(cartao4, 1, 0)
 
     def carregar_vendedores(self):
-        """Carrega a lista de vendedores no combobox"""
         try:
             self.combo_vendedor.clear()
             self.combo_vendedor.addItem("Todos os Vendedores", None)
-            
+
             vendedores = self.sessao.execute(
-                select(Entidade).where(Entidade.tipo_entidade == 'VENDEDOR')
+                select(Entidade).where(
+                    Entidade.tipo_entidade == TipoEntidadeEnum.VENDEDOR,
+                    Entidade.ativo == True
+            )
             ).scalars().all()
-            
+
             for vendedor in vendedores:
                 nome = self.obter_nome_entidade(vendedor)
                 self.combo_vendedor.addItem(nome, vendedor.id)
-                
+
         except Exception as e:
             print(f"Erro ao carregar vendedores: {e}")
 
+
     def carregar_clientes(self):
-        """Carrega a lista de clientes no combobox"""
         try:
             self.combo_cliente.clear()
             self.combo_cliente.addItem("Todos os Clientes", None)
-            
+
             clientes = self.sessao.execute(
-                select(Entidade).where(Entidade.tipo_entidade == 'CLIENTE')
+                select(Entidade).where(
+                    Entidade.tipo_entidade == TipoEntidadeEnum.CLIENTE,
+                    Entidade.ativo == True
+                )
             ).scalars().all()
-            
+
             for cliente in clientes:
                 nome = self.obter_nome_entidade(cliente)
                 self.combo_cliente.addItem(nome, cliente.id)
-                
+
         except Exception as e:
             print(f"Erro ao carregar clientes: {e}")
+
 
     def obter_nome_entidade(self, entidade):
         """Obtém o nome apropriado para uma entidade"""
