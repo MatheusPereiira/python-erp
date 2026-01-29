@@ -8,7 +8,7 @@ from PyQt6.QtCore import QSize, Qt, pyqtSignal
 from sqlalchemy.orm import Session
 
 # --- IMPORTAÇÕES DO MODELO ---
-from src.Models.models import engine, Usuario, CargoPerfilEnum
+from src.Models.models import engine, Usuario
 
 # --- IMPORTAÇÕES DAS VIEWS (Agora todas confirmadas) ---
 # GRUPO 1 - CADASTROS E CORE
@@ -20,17 +20,9 @@ from src.Views.configuracoes_view import ConfiguracoesDialog
 
 # GRUPO 2 - COMERCIAL
 from src.Components.Comercial.comercial import ComercialSistema
-# Tratamento de erro caso falte algum arquivo específico do comercial, mas o app abre
-try:
-    from src.Components.Comercial.tela_venda import TelaVenda
-    from src.Components.Comercial.tela_compra import TelaCompra
-    from src.Views.historico_vendas_view import HistoricoVendasWidget
-except ImportError:
-    class TelaVenda(QWidget): pass
-    class TelaCompra(QWidget): pass
-    class HistoricoVendasWidget(QWidget): pass
-
-# GRUPO 3 - FINANCEIRO E ESTOQUE
+from src.Components.Comercial.tela_venda import TelaVenda
+from src.Components.Comercial.tela_compra import TelaCompra
+from src.Views.historico_vendas_view import HistoricoVendasWidget
 from src.Views.cadastro_financeiro_view import CadastroFinanceiroWidget
 from src.Views.dashboard_financeiro_view import DashboardFinanceiroWidget
 from src.Views.cadastro_estoque_view import CadastroEstoqueWidget
