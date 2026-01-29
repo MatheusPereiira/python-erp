@@ -43,13 +43,13 @@ No projeto ERP original, minha contribuição envolveu:
 
 -  **Arquitetura do banco de dados**
   - Criação e modelagem das tabelas principais
-  - Definição das entidades relacionadas a **cadastro de pessoas e produtos**
+  - Definição das entidades relacionadas a cadastro de pessoas e produtos
 
 -  **Módulo de Cadastros**
-  - Desenvolvimento do **front-end completo** de:
+  - Desenvolvimento do front-end completo de:
     - Cadastro de Pessoas
     - Cadastro de Produtos
-  - Interfaces que serviram como **base estrutural** para o restante do sistema
+  - Interfaces que serviram como base estrutural para o restante do sistema
 
 -  **Contribuições adicionais**
   - Apoio na organização da lógica de negócio
@@ -209,3 +209,4 @@ sistema-gestao-erp/
 
 
 ---
+
