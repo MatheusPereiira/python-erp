@@ -2,7 +2,7 @@
   <img src="assets/banner.png" alt="Banner ERP Desktop" width="100%">
 </p>
 
-<h1 align="center"> Sistema de Gestão ERP </h1>
+<h1 align="center"> Sistema de Gestão ERP. </h1>
 
 <p align="center">
   <img src="assets/logo.png" alt="Logo ERP" width="180">
@@ -209,4 +209,5 @@ sistema-gestao-erp/
 
 
 ---
+
 
